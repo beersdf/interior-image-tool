@@ -20,6 +20,7 @@ export default function InteriorImageGeneratorApp() {
   const [titleEnabled, setTitleEnabled] = useState(true)
   const [imageGap, setImageGap] = useState(10)
   const [selectedRoom, setSelectedRoom] = useState('living')
+  const [isExporting, setIsExporting] = useState(false)
 
   const residentialRooms = [
     { id: 'entrance', label: '현관' },
@@ -76,12 +77,20 @@ export default function InteriorImageGeneratorApp() {
           new Promise((resolve) => {
             const reader = new FileReader()
 
-            reader.onload = () => {
-              resolve({
-                file,
-                preview: reader.result,
-                name: file.name,
-              })
+              reader.onload = () => {
+              const img = new Image()
+
+              img.onload = () => {
+                resolve({
+                  file,
+                  preview: reader.result,
+                  name: file.name,
+                  width: img.width,
+                  height: img.height,
+                })
+              }
+
+              img.src = reader.result
             }
 
             reader.readAsDataURL(file)
@@ -174,6 +183,7 @@ export default function InteriorImageGeneratorApp() {
 
   const exportPNG = async () => {
     try {
+      setIsExporting(true)
       if (!previewRef.current) return
 
       const exportWidth = mode === 'long' ? 850 : coverWidth
@@ -193,14 +203,17 @@ export default function InteriorImageGeneratorApp() {
       })
 
       downloadDataUrl(dataUrl, 'export.png')
+      setIsExporting(false)
     } catch (error) {
       console.error(error)
       alert('PNG export 실패')
+      setIsExporting(false)
     }
   }
 
   const exportJPG = async () => {
     try {
+      setIsExporting(true)
       if (!previewRef.current) return
 
       const exportWidth = mode === 'long' ? 850 : coverWidth
@@ -221,9 +234,11 @@ export default function InteriorImageGeneratorApp() {
       })
 
       downloadDataUrl(dataUrl, 'export.jpg')
+      setIsExporting(false)
     } catch (error) {
       console.error(error)
       alert('JPG export 실패')
+      setIsExporting(false)
     }
   }
 
@@ -597,14 +612,18 @@ export default function InteriorImageGeneratorApp() {
                       index !== currentImages.length - 1 ? imageGap : 0,
                   }}
                 >
-                  <div className="overflow-hidden bg-zinc-100 relative">
+                  <div
+                    className="overflow-hidden relative bg-zinc-100"
+                    style={{
+                      height: `${file.height - image.cropTop - image.cropBottom}px`,
+                    }}
+                  >
                     <img
                       src={getImageUrl(file)}
                       alt="preview"
-                      className="w-full h-full object-cover"
+                      className="w-full block"
                       style={{
-                        height: `calc(100% + ${image.cropTop + image.cropBottom}px)`,
-                        marginTop: `-${image.cropTop}px`,
+                        transform: `translateY(-${image.cropTop}px)`,
                       }}
                     />
 
@@ -634,6 +653,20 @@ export default function InteriorImageGeneratorApp() {
           </div>
         </div>
       </div>
+    
+    {isExporting && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center">
+          <div className="bg-white px-8 py-6 rounded-3xl shadow-2xl text-center">
+            <div className="text-xl font-semibold mb-2">
+              이미지 추출 중...
+            </div>
+
+            <div className="text-sm text-zinc-500">
+              잠시만 기다려주세요
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
