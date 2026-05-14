@@ -44,7 +44,13 @@ export default function InteriorImageGeneratorApp() {
     bedroom: [],
   })
 
-  const [imageSettings, setImageSettings] = useState([])
+const [imageSettings, setImageSettings] = useState({
+  entrance: [],
+  living: [],
+  kitchen: [],
+  bathroom: [],
+  bedroom: [],
+})
 
   const previewRef = useRef(null)
   const roomPreviewRefs = useRef({})
@@ -63,23 +69,31 @@ export default function InteriorImageGeneratorApp() {
     return roomImages[selectedRoom] || []
   }, [mode, type, roomImages, selectedRoom])
 
-  const ensureImageSettings = (count) => {
-    setImageSettings((prev) => {
-      const next = [...prev]
+    const ensureImageSettings = (roomId, count) => {
 
-      while (next.length < count) {
-        next.push({
-          watermarkType: 'white',
-          watermarkPosition: 'bottom-right',
-          watermarkSize: 84,
-          cropTop: 0,
-          cropBottom: 0,
-        })
-      }
+      setImageSettings((prev) => {
 
-      return next
-    })
-  }
+        const next = {
+          ...prev,
+        }
+
+        const roomSettings = [...(next[roomId] || [])]
+
+        while (roomSettings.length < count) {
+          roomSettings.push({
+            watermarkType: 'white',
+            watermarkPosition: 'bottom-right',
+            watermarkSize: 84,
+            cropTop: 0,
+            cropBottom: 0,
+          })
+        }
+
+        next[roomId] = roomSettings
+
+        return next
+      })
+    }
 
   const convertFiles = async (fileList) => {
     return Promise.all(
@@ -111,11 +125,22 @@ export default function InteriorImageGeneratorApp() {
   }
 
   const handleUpload = async (event, roomId = null) => {
+
     const files = await convertFiles(event.target.files)
 
     if (!files.length) return
 
-    ensureImageSettings(files.length + imageSettings.length)
+    const targetRoomId =
+      mode === 'cover'
+        ? 'living'
+        : type === 'commercial'
+          ? 'living'
+          : roomId
+
+    ensureImageSettings(
+      targetRoomId,
+      (roomImages[targetRoomId]?.length || 0) + files.length
+    )
 
     if (mode === 'cover') {
       setRoomImages((prev) => ({
@@ -141,20 +166,37 @@ export default function InteriorImageGeneratorApp() {
     }
   }
 
-  const updateImageSetting = (index, key, value) => {
-    setImageSettings((prev) =>
-      prev.map((item, idx) => {
-        if (idx !== index) return item
+  const updateImageSetting = (
+    roomId,
+    index,
+    key,
+    value
+  ) => {
 
-        return {
-          ...item,
-          [key]: value,
+    setImageSettings((prev) => {
+
+      const next = {
+        ...prev,
+      }
+
+      next[roomId] = next[roomId].map(
+        (item, idx) => {
+
+          if (idx !== index) return item
+
+          return {
+            ...item,
+            [key]: value,
+          }
         }
-      })
-    )
+      )
+
+      return next
+    })
   }
 
   const removeImage = (index) => {
+
     const targetKey =
       mode === 'cover'
         ? 'living'
@@ -164,7 +206,16 @@ export default function InteriorImageGeneratorApp() {
 
     setRoomImages((prev) => ({
       ...prev,
-      [targetKey]: prev[targetKey].filter((_, idx) => idx !== index),
+      [targetKey]: prev[targetKey].filter(
+        (_, idx) => idx !== index
+      ),
+    }))
+
+    setImageSettings((prev) => ({
+      ...prev,
+      [targetKey]: prev[targetKey].filter(
+        (_, idx) => idx !== index
+      ),
     }))
   }
 
@@ -379,7 +430,13 @@ export default function InteriorImageGeneratorApp() {
       bedroom: [],
     })
 
-    setImageSettings([])
+    setImageSettings({
+      entrance: [],
+      living: [],
+      kitchen: [],
+      bathroom: [],
+      bedroom: [],
+    })
 
     coverRefs.current = []
     roomPreviewRefs.current = {}
@@ -704,7 +761,7 @@ export default function InteriorImageGeneratorApp() {
                 )}
 
                 {mode === 'cover' && currentImages.map((file, index) => {
-                  const image = imageSettings[index]
+                  const image = imageSettings.living?.[index]
 
                   if (!image) return null
 
@@ -745,6 +802,7 @@ export default function InteriorImageGeneratorApp() {
                             value={image.cropTop}
                             onChange={(e) =>
                               updateImageSetting(
+                                'living',
                                 index,
                                 'cropTop',
                                 Number(e.target.value)
@@ -764,6 +822,7 @@ export default function InteriorImageGeneratorApp() {
                             value={image.cropBottom}
                             onChange={(e) =>
                               updateImageSetting(
+                                'living',
                                 index,
                                 'cropBottom',
                                 Number(e.target.value)
@@ -778,7 +837,7 @@ export default function InteriorImageGeneratorApp() {
                 })}
 
                 {mode === 'long' && currentImages.map((file, index) => {
-                  const image = imageSettings[index]
+                  const image = imageSettings[selectedRoom]?.[index]
 
                   if (!image) return null
 
@@ -819,7 +878,12 @@ export default function InteriorImageGeneratorApp() {
                               <div className="grid grid-cols-2 gap-2">
                                 <button
                                   onClick={() =>
-                                    updateImageSetting(index, 'watermarkType', 'white')
+                                    updateImageSetting(
+                                        selectedRoom,
+                                        index,
+                                        'watermarkType',
+                                        'white'
+                                      )
                                   }
                                   className={`rounded-2xl py-3 border ${
                                     image.watermarkType === 'white'
@@ -832,7 +896,12 @@ export default function InteriorImageGeneratorApp() {
 
                                 <button
                                   onClick={() =>
-                                    updateImageSetting(index, 'watermarkType', 'black')
+                                    updateImageSetting(
+                                      selectedRoom,
+                                      index,
+                                      'watermarkType',
+                                      'black'
+                                    )
                                   }
                                   className={`rounded-2xl py-3 border ${
                                     image.watermarkType === 'black'
@@ -855,7 +924,12 @@ export default function InteriorImageGeneratorApp() {
                                   <button
                                     key={pos}
                                     onClick={() =>
-                                      updateImageSetting(index, 'watermarkPosition', pos)
+                                      updateImageSetting(
+                                      selectedRoom,
+                                      index,
+                                      'watermarkPosition',
+                                      pos
+                                    )
                                     }
                                     className={`rounded-2xl py-3 border text-xs ${
                                       image.watermarkPosition === pos
@@ -879,6 +953,7 @@ export default function InteriorImageGeneratorApp() {
                                 value={image.watermarkSize}
                                 onChange={(e) =>
                                   updateImageSetting(
+                                    selectedRoom,
                                     index,
                                     'watermarkSize',
                                     Number(e.target.value)
@@ -900,6 +975,7 @@ export default function InteriorImageGeneratorApp() {
                             value={image.cropTop}
                             onChange={(e) =>
                               updateImageSetting(
+                                selectedRoom,
                                 index,
                                 'cropTop',
                                 Number(e.target.value)
@@ -919,6 +995,7 @@ export default function InteriorImageGeneratorApp() {
                             value={image.cropBottom}
                             onChange={(e) =>
                               updateImageSetting(
+                                selectedRoom,
                                 index,
                                 'cropBottom',
                                 Number(e.target.value)
@@ -987,7 +1064,7 @@ export default function InteriorImageGeneratorApp() {
                       0
                     ) + index
 
-                const image = imageSettings[globalIndex]
+                    const image = imageSettings[room.id]?.[index]
 
                 if (!image) return null
 
@@ -1076,7 +1153,7 @@ export default function InteriorImageGeneratorApp() {
 
         {currentImages.map((file, index) => {
 
-          const image = imageSettings[index]
+          const image =  imageSettings[selectedRoom]?.[index]
 
           if (!image) return null
 
@@ -1136,7 +1213,7 @@ export default function InteriorImageGeneratorApp() {
     <div className="space-y-6">
       {currentImages.map((file, index) => {
 
-      const image = imageSettings[index]
+      const image = imageSettings.living?.[index]
 
       if (!image) return null
 
