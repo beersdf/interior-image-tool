@@ -1134,35 +1134,46 @@ export default function InteriorImageGeneratorApp() {
 
   {mode === 'cover' && (
     <div className="space-y-6">
-
       {currentImages.map((file, index) => {
 
-        const image = imageSettings[index]
+      const image = imageSettings[index]
 
-        if (!image) return null
+      if (!image) return null
 
-        return (
-          <div
-            key={index}
-            ref={(el) => (coverRefs.current[index] = el)}
-            className="overflow-hidden bg-[#FFFDF7]"
+      return (
+        <div
+          key={index}
+          ref={(el) => (coverRefs.current[index] = el)}
+          className="overflow-hidden bg-[#FFFDF7]"
+          style={{
+            width: 850,
+            maxWidth: 850,
+
+            minHeight:
+              coverWidth === 850
+                ? 580
+                : undefined,
+
+            maxHeight:
+              coverWidth === 850
+                ? 850
+                : undefined,
+          }}
+        >
+
+          <img
+            src={getImageUrl(file)}
+            alt="cover-preview"
+            className="w-full block"
             style={{
-              width: 850,
-              maxWidth: 850,
+              marginTop: `-${image.cropTop}px`,
+              marginBottom: `-${image.cropBottom}px`,
             }}
-          >
-            <img
-              src={getImageUrl(file)}
-              alt="cover-preview"
-              className="w-full block"
-              style={{
-                marginTop: `-${image.cropTop}px`,
-                marginBottom: `-${image.cropBottom}px`,
-              }}
-            />
-          </div>
-        )
-      })}
+          />
+
+        </div>
+      )
+    })}
     </div>
   )}
 
