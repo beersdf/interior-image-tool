@@ -72,8 +72,8 @@ export default function InteriorImageGeneratorApp() {
           watermarkType: 'white',
           watermarkPosition: 'bottom-right',
           watermarkSize: 84,
-          cropTop: 120,
-          cropBottom: 80,
+          cropTop: 0,
+          cropBottom: 0,
         })
       }
 
