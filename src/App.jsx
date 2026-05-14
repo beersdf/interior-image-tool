@@ -192,167 +192,189 @@ export default function InteriorImageGeneratorApp() {
     link.click()
   }
 
-const exportImage = async (format = 'png') => {
-  try {
+  const exportImage = async (format = 'png') => {
+    try {
 
-    setIsExporting(true)
-    if (mode === 'cover') {
+      setIsExporting(true)
+      if (mode === 'cover') {
 
-      for (let i = 0; i < coverRefs.current.length; i++) {
+        for (let i = 0; i < coverRefs.current.length; i++) {
 
-        const node = coverRefs.current[i]
+          const node = coverRefs.current[i]
 
-        if (!node) continue
+          if (!node) continue
+
+          const exporter =
+            format === 'png'
+              ? toPng
+              : toJpeg
+
+          const dataUrl = await exporter(node, {
+            canvasWidth: coverWidth,
+            width: coverWidth,
+            cacheBust: true,
+            pixelRatio: 1,
+            quality: 0.95,
+            backgroundColor: '#FFFDF7',
+          })
+
+          downloadDataUrl(
+            dataUrl,
+            `cover-${i + 1}.${format}`
+          )
+        }
+
+        setIsExporting(false)
+        return
+      }
+
+      if (
+        mode === 'long' &&
+        type === 'residential' &&
+        selectedRoom === 'all'
+      ) {
+
+        for (const room of residentialRooms) {
+
+          const node =
+            roomPreviewRefs.current[room.id]
+
+          if (!node) continue
+
+          const exporter =
+            format === 'png'
+              ? toPng
+              : toJpeg
+
+          const dataUrl = await exporter(node, {
+            canvasWidth: 850,
+            width: 850,
+            cacheBust: true,
+            pixelRatio: 1,
+            quality: 0.95,
+            backgroundColor: '#FFFDF7',
+          })
+
+          downloadDataUrl(
+            dataUrl,
+            `${room.id}.${format}`
+          )
+        }
+
+        setIsExporting(false)
+        return
+      }
+
+      if (mode === 'banner') {
 
         const exporter =
           format === 'png'
             ? toPng
             : toJpeg
 
-        const dataUrl = await exporter(node, {
-          canvasWidth: coverWidth,
-          width: coverWidth,
-          cacheBust: true,
-          pixelRatio: 1,
-          quality: 0.95,
-          backgroundColor: '#FFFDF7',
-        })
+        const bannerList = [
+          {
+            ref: bannerCustomRef,
+            name: `banner-custom.${format}`,
+          },
+          {
+            ref: bannerCommercialRef,
+            name: `banner_commercial.${format}`,
+          },
+          {
+            ref: bannerResidentialRef,
+            name: `banner_residential.${format}`,
+          },
+        ]
 
-        downloadDataUrl(
-          dataUrl,
-          `cover-${i + 1}.${format}`
-        )
+        for (const item of bannerList) {
+
+          if (!item.ref.current) continue
+
+          const dataUrl = await exporter(item.ref.current, {
+            canvasWidth: coverWidth,
+            width: coverWidth,
+            cacheBust: true,
+            pixelRatio: 1,
+            quality: 0.95,
+            backgroundColor: '#FFFDF7',
+          })
+
+          downloadDataUrl(dataUrl, item.name)
+        }
+
+        setIsExporting(false)
+        return
       }
 
-      setIsExporting(false)
-      return
-    }
 
-    if (
-      mode === 'long' &&
-      type === 'residential' &&
-      selectedRoom === 'all'
-    ) {
-
-      for (const room of residentialRooms) {
-
-        const node =
-          roomPreviewRefs.current[room.id]
-
-        if (!node) continue
-
-        const exporter =
-          format === 'png'
-            ? toPng
-            : toJpeg
-
-        const dataUrl = await exporter(node, {
-          canvasWidth: 850,
-          width: 850,
-          cacheBust: true,
-          pixelRatio: 1,
-          quality: 0.95,
-          backgroundColor: '#FFFDF7',
-        })
-
-        downloadDataUrl(
-          dataUrl,
-          `${room.id}.${format}`
-        )
+      if (!previewRef.current) {
+        setIsExporting(false)
+        return
       }
 
-      setIsExporting(false)
-      return
-    }
-
-    if (mode === 'banner') {
+      const exportWidth =
+        mode === 'long'
+          ? 850
+          : coverWidth
 
       const exporter =
         format === 'png'
           ? toPng
           : toJpeg
 
-      const bannerList = [
+      const dataUrl = await exporter(
+        previewRef.current,
         {
-          ref: bannerCustomRef,
-          name: `banner-custom.${format}`,
-        },
-        {
-          ref: bannerCommercialRef,
-          name: `banner_commercial.${format}`,
-        },
-        {
-          ref: bannerResidentialRef,
-          name: `banner_residential.${format}`,
-        },
-      ]
-
-      for (const item of bannerList) {
-
-        if (!item.ref.current) continue
-
-        const dataUrl = await exporter(item.ref.current, {
-          canvasWidth: coverWidth,
-          width: coverWidth,
+          canvasWidth: exportWidth,
+          width: exportWidth,
           cacheBust: true,
           pixelRatio: 1,
           quality: 0.95,
           backgroundColor: '#FFFDF7',
-        })
+        }
+      )
 
-        downloadDataUrl(dataUrl, item.name)
-      }
+      const fileName =
+        mode === 'banner'
+          ? `banner.${format}`
+          : `long-image.${format}`
+
+      downloadDataUrl(dataUrl, fileName)
 
       setIsExporting(false)
-      return
-    }
 
+    } catch (error) {
 
-    if (!previewRef.current) {
+      console.error(error)
+
+      alert(`${format.toUpperCase()} export 실패`)
+
       setIsExporting(false)
-      return
     }
+  }
 
-    const exportWidth =
-      mode === 'long'
-        ? 850
-        : coverWidth
-
-    const exporter =
-      format === 'png'
-        ? toPng
-        : toJpeg
-
-    const dataUrl = await exporter(
-      previewRef.current,
-      {
-        canvasWidth: exportWidth,
-        width: exportWidth,
-        cacheBust: true,
-        pixelRatio: 1,
-        quality: 0.95,
-        backgroundColor: '#FFFDF7',
-      }
+  const resetAllImages = () => {
+    const confirmReset = window.confirm(
+      '업로드된 이미지와 설정을 모두 초기화할까요?'
     )
 
-    const fileName =
-      mode === 'banner'
-        ? `banner.${format}`
-        : `long-image.${format}`
+    if (!confirmReset) return
 
-    downloadDataUrl(dataUrl, fileName)
+    setRoomImages({
+      entrance: [],
+      living: [],
+      kitchen: [],
+      bathroom: [],
+      bedroom: [],
+    })
 
-    setIsExporting(false)
+    setImageSettings([])
 
-  } catch (error) {
+    coverRefs.current = []
+    roomPreviewRefs.current = {}
 
-    console.error(error)
-
-    alert(`${format.toUpperCase()} export 실패`)
-
-    setIsExporting(false)
   }
-}
 
   return (
     <div className="min-h-screen bg-[#f6f4ee] text-zinc-900 p-8">
@@ -551,6 +573,13 @@ const exportImage = async (format = 'png') => {
               JPG 저장
             </button>
           </div>
+
+          <button
+            onClick={resetAllImages}
+            className="mt-10 w-full rounded-2xl border border-red-300 bg-red-50 py-4 font-semibold text-red-600 transition hover:bg-red-100"
+          >
+            이미지 초기화
+          </button>
         </div>
 
         <div className="space-y-6">
