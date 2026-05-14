@@ -1164,7 +1164,7 @@ export default function InteriorImageGeneratorApp() {
           <img
             src={getImageUrl(file)}
             alt="cover-preview"
-            className="w-full block"
+            className="w-full block min-h-[580px]"
             style={{
               marginTop: `-${image.cropTop}px`,
               marginBottom: `-${image.cropBottom}px`,
