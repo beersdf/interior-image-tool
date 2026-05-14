@@ -234,32 +234,42 @@ export default function InteriorImageGeneratorApp() {
         selectedRoom === 'all'
       ) {
 
-        for (const room of residentialRooms) {
+      for (const room of residentialRooms) {
 
-          const node =
-            roomPreviewRefs.current[room.id]
+        const node =
+          roomPreviewRefs.current[room.id]
 
-          if (!node) continue
+        if (!node) continue
 
-          const exporter =
-            format === 'png'
-              ? toPng
-              : toJpeg
+        const exporter =
+          format === 'png'
+            ? toPng
+            : toJpeg
 
-          const dataUrl = await exporter(node, {
-            canvasWidth: 850,
-            width: 850,
-            cacheBust: true,
-            pixelRatio: 1,
-            quality: 0.95,
-            backgroundColor: '#FFFDF7',
-          })
+        const dataUrl = await exporter(node, {
+          canvasWidth: 850,
+          width: 850,
+          cacheBust: true,
+          pixelRatio: 1,
+          quality: 0.95,
+          backgroundColor: '#FFFDF7',
+        })
 
-          downloadDataUrl(
-            dataUrl,
-            `${room.id}.${format}`
-          )
-        }
+        // 번호 생성
+        const roomIndex =
+          residentialRooms.findIndex(
+            (r) => r.id === room.id
+          ) + 1
+
+        // 파일명 생성
+        const fileName =
+          `${roomIndex}_${room.label}.${format}`
+
+        downloadDataUrl(
+          dataUrl,
+          fileName
+        )
+      }
 
         setIsExporting(false)
         return
